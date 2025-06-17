@@ -1,5 +1,6 @@
 package core.smp.main;
 
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -23,7 +24,7 @@ public class Abilities {
             victim.setFireTicks(tier == 1 ? 40 : 80);
             if (tier == 3) {
                 attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 4));
-                victim.getWorld().createExplosion(victim.getLocation(), 4.0F, false, false);
+                victim.getWorld().createExplosion(victim.getLocation(), 1.0F, false, false);
             }
         }
     }
@@ -35,8 +36,8 @@ public class Abilities {
             return;
         }
 
-        if(player.getName().equals("BaronClaps")) {
-            player.setVelocity(player.getNearbyEntities(10,3,10).getFirst().getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(1.5));
+        if(player.getName().equals("BaronClaps") || player.getName().equals("Shyha")) {
+            player.setVelocity(player.getNearbyEntities(20,5,20).getFirst().getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(1.5));
         } else {
             player.setVelocity(player.getLocation().getDirection().multiply(1.5));
         }
@@ -82,6 +83,16 @@ public class Abilities {
 
         if (tier >= 2 && !coreManager.isCooldownActive(attacker, "thunder", cooldownTime)) {
             victim.getWorld().strikeLightning(victim.getLocation());
+
+            if (tier == 3) {
+                victim.getNearbyEntities(10, 3, 10).forEach(entity -> {
+                    if (entity instanceof Player && entity != victim && entity != attacker) {
+
+                        Particles.spawnAnimatedParticleLineForTime(victim.getLocation(), entity.getLocation(), org.bukkit.Particle.ELECTRIC_SPARK, 0.2, 5, 20);
+                        entity.getLocation().getWorld().strikeLightning(entity.getLocation());
+                    }
+                });
+            }
         }
     }
 

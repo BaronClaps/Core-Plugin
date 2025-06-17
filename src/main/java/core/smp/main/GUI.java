@@ -1,4 +1,4 @@
-package org.mineacademy.cowcannon;
+package core.smp.main;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -39,6 +39,6 @@ public class GUI implements Listener {
 		Player player = (Player) event.getPlayer();
 
 		if (player.hasMetadata("OpenedMenu"))
-			player.removeMetadata("OpenedMenu", CowCannon.getInstance());
+			player.removeMetadata("OpenedMenu", Main.getPlugin(Main.class));
 	}
 }

@@ -1,6 +1,7 @@
 package core.smp.main;
 
 import org.bukkit.*;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +15,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.metadata.FixedMetadataValue;
 
 import java.util.List;
 import java.util.Objects;
@@ -94,7 +96,7 @@ public class Listen implements Listener {
                 event.getPlayer().getNearbyEntities(3, 3, 3).forEach(entity -> {
                     if (entity instanceof LivingEntity && entity != attacker) {
                         ((LivingEntity) entity).addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS, 60, 3));
-                        event.getPlayer().spawnParticle(Particle.DRAGON_BREATH, Objects.requireNonNull(event.getEntity().getLastDeathLocation()), 20, 0.5, 0.5, 0.5, 0.1);
+                        event.getPlayer().spawnParticle(org.bukkit.Particle.DRAGON_BREATH, Objects.requireNonNull(event.getEntity().getLastDeathLocation()), 20, 0.5, 0.5, 0.5, 0.1);
                     }
                 });
             }
@@ -114,7 +116,6 @@ public class Listen implements Listener {
     }
 
     void openCoreSelectionGUI(Player player) {
-        Player player = (Player) sender;
 
 		Inventory inventory = Bukkit.createInventory(player, 9 * 3, ChatColor.DARK_BLUE + "Core Selection");
 
@@ -139,19 +140,19 @@ public class Listen implements Listener {
 
         ItemStack sword = new ItemStack(Material.WOODEN_SWORD);
         ItemMeta swordMeta = sword.getItemMeta();
-        swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + core + " core"));
+        swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + coreManager.getCore(player) + " core"));
         sword.setItemMeta(swordMeta);
 
         ItemStack axe = new ItemStack(Material.WOODEN_AXE);
         ItemMeta axeMeta = axe.getItemMeta();
-        axeMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + core + " core"));
+        axeMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + coreManager.getCore(player) + " core"));
         axe.setItemMeta(axeMeta);
 
         inventory.setItem(21, axe);
         inventory.setItem(23, sword);
 
 		player.openInventory(inventory);
-		player.setMetadata("OpenedMenu", new FixedMetadataValue(Main.getInstance(), "Core Selection"));
+		player.setMetadata("OpenedMenu", new FixedMetadataValue(Main.getPlugin(Main.class), "Core Selection"));
     }
 
     @EventHandler
@@ -178,6 +179,12 @@ public class Listen implements Listener {
         if ("Spider".equals(core)) {
             coreAbilities.handleWallClimb(player); // Tier 2 and Tier 3: Wall climb
         }
+    }
+
+    @EventHandler
+    public void onPlayerRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        passive(player);
     }
 
     public void scheduleGolemPassive(Player player) {

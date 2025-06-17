@@ -22,7 +22,6 @@ public class Main extends JavaPlugin {
         lamp.register(new Commands(coreManager, coreListener));
         getLogger().info("Core SMP Plugin has been enabled!");
     }
-
     @Override
     public void onDisable() {
         getLogger().info("Core SMP plugin has been disabled!");
