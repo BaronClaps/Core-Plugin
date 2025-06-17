@@ -1,19 +1,45 @@
 plugins {
     id("java")
+    id("net.minecrell.plugin-yml.paper") version "0.6.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-group = "bomb.baron"
-version = "1.0-SNAPSHOT"
+group = "core.smp"
+version = "0.0.11"
 
 repositories {
+    maven {
+        url = uri("https://jitpack.io")
+    }
+    maven {
+        name = "papermc"
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
     mavenCentral()
 }
 
-dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+tasks {
+    shadowJar {
+        archiveClassifier.set("")
+    }
+
+    assemble {
+        dependsOn(shadowJar)
+    }
 }
 
-tasks.test {
-    useJUnitPlatform()
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
+    implementation("io.github.revxrsal:lamp.common:4.0.0-rc.12")
+    implementation("io.github.revxrsal:lamp.bukkit:4.0.0-rc.12")
+    implementation("io.github.revxrsal:lamp.brigadier:4.0.0-rc.12")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+}
+
+paper {
+    main = "core.smp.main.Main"
+    apiVersion = "1.21"
 }
