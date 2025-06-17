@@ -114,23 +114,29 @@ public class Listen implements Listener {
     }
 
     void openCoreSelectionGUI(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GOLD + "Select Your Core");
-        String[] cores = {"Blaze", "Phantom", "Bat", "Spider", "Stray", "Thunder", "Wither", "Bogged", "Gambler", "Iron Golem"};
-        for (int i = 0; i < cores.length; i++) {
-            ItemStack item = new ItemStack(Material.WHITE_WOOL, 1);
-            ItemMeta meta = item.getItemMeta();
-            if (meta != null) {
-                meta.setDisplayName(ChatColor.YELLOW + "Choose the " + cores[i] + " core");
-                item.setItemMeta(meta);
-            }
-            gui.setItem(i, item);
-        }
-        player.openInventory(gui);
-        coreManager.setGUIState(player, "core-selection"); // Correctly set GUI state
-    }
+        Player player = (Player) sender;
 
-    private void openWeaponSelectionGUI(Player player, String core) {
-        Inventory gui = Bukkit.createInventory(null, 9, ChatColor.GOLD + "Select Your Weapon");
+		Inventory inventory = Bukkit.createInventory(player, 9 * 3, ChatColor.DARK_BLUE + "Core Selection");
+
+		ItemStack getDiamondButton = new ItemStack(Material.DIAMOND);
+		ItemMeta diamondMeta = getDiamondButton.getItemMeta();
+		diamondMeta.setDisplayName(ChatColor.AQUA + "Get Diamond");
+		getDiamondButton.setItemMeta(diamondMeta);
+
+		ItemStack clearInventoryButton = new ItemStack(Material.LAVA_BUCKET);
+		ItemMeta clearInventoryMeta = clearInventoryButton.getItemMeta();
+		clearInventoryMeta.setDisplayName(ChatColor.RED + "Clear Inventory");
+		clearInventoryButton.setItemMeta(clearInventoryMeta);
+
+		ItemStack clearWeatherButton = new ItemStack(Material.SUNFLOWER);
+		ItemMeta clearWeatherMeta = clearWeatherButton.getItemMeta();
+		clearWeatherMeta.setDisplayName(ChatColor.YELLOW + "Clear Weather");
+		clearWeatherButton.setItemMeta(clearWeatherMeta);
+
+		inventory.setItem(11, getDiamondButton);
+		inventory.setItem(13, clearInventoryButton);
+		inventory.setItem(15, clearWeatherButton);
+
         ItemStack sword = new ItemStack(Material.WOODEN_SWORD);
         ItemMeta swordMeta = sword.getItemMeta();
         swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + core + " core"));
@@ -141,40 +147,11 @@ public class Listen implements Listener {
         axeMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + core + " core"));
         axe.setItemMeta(axeMeta);
 
-        gui.setItem(0, sword);
-        gui.setItem(1, axe);
-        player.openInventory(gui);
-        coreManager.setCore(player, "weapon-selection");
-        coreManager.setTier(player, 1);
-    }
+        inventory.setItem(21, axe);
+        inventory.setItem(23, sword);
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        Player player = (Player) event.getWhoClicked();
-        String guiType = coreManager.getGUIState(player); // Use GUI state instead of core
-
-        if ("core-selection".equals(guiType)) {
-            event.setCancelled(true);
-            ItemStack clickedItem = event.getCurrentItem();
-            if (clickedItem != null && clickedItem.getType() == Material.WHITE_WOOL) {
-                String core = ChatColor.stripColor(clickedItem.getItemMeta().getDisplayName())
-                        .replace("Choose the ", "")
-                        .replace(" core", "");
-                coreManager.setSelectedCore(player, core); // Track selected core
-                openWeaponSelectionGUI(player, core);
-            }
-        } else if ("weapon-selection".equals(guiType)) {
-            event.setCancelled(true);
-            ItemStack clickedItem = event.getCurrentItem();
-            if (clickedItem != null && (clickedItem.getType() == Material.WOODEN_SWORD || clickedItem.getType() == Material.WOODEN_AXE)) {
-                String core = coreManager.getSelectedCore(player); // Retrieve selected core
-                coreManager.setCore(player, core);
-                player.getInventory().addItem(clickedItem);
-                player.closeInventory();
-                player.sendMessage(ChatColor.GREEN + "You have selected the " + core + " core with your weapon!");
-                coreManager.clearGUIState(player); // Clear GUI state
-            }
-        }
+		player.openInventory(inventory);
+		player.setMetadata("OpenedMenu", new FixedMetadataValue(Main.getInstance(), "Core Selection"));
     }
 
     @EventHandler
