@@ -36,20 +36,16 @@ public class Particles {
 
     public static void spawnAngledParticleRings(Player player, Particle particle, double radius, int count, double angleOffset) {
         double angleIncrement = 2 * Math.PI / count;
+        double angleRadians = Math.toRadians(angleOffset);
 
         for (int i = 0; i < count; i++) {
             double angle = i * angleIncrement;
             double x = radius * Math.cos(angle);
             double z = radius * Math.sin(angle);
-            double y = angleOffset;
-            player.getWorld().spawnParticle(particle, player.getLocation().add(x, y, z), 1);
-        }
 
-        for (int i = 0; i < count; i++) {
-            double angle = i * angleIncrement;
-            double x = radius * Math.cos(angle);
-            double z = radius * Math.sin(angle);
-            double y = -angleOffset;
+            double y = x * Math.sin(angleRadians);
+            x = x * Math.cos(angleRadians);
+
             player.getWorld().spawnParticle(particle, player.getLocation().add(x, y, z), 1);
         }
     }
@@ -102,6 +98,19 @@ public class Particles {
     }
 
     public static void spawnAnimatedParticleLineForTime(Location start, Location end, Particle particle, double step, int time, int delay) {
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("Start or end location cannot be null.");
+        }
+
+        World world = start.getWorld();
+        if (world == null || !world.equals(end.getWorld())) {
+            throw new IllegalArgumentException("Start and end locations must be in the same world.");
+        }
+
+        if (particle == null) {
+            throw new IllegalArgumentException("Particle type cannot be null.");
+        }
+
         new BukkitRunnable() {
             int ticks = 0;
             double currentStep = 0;
@@ -117,7 +126,7 @@ public class Particles {
                 if (!animationComplete) {
                     if (currentStep <= start.distance(end)) {
                         Location point = start.clone().add(end.toVector().subtract(start.toVector()).normalize().multiply(currentStep));
-                        start.getWorld().spawnParticle(particle, point, 1);
+                        world.spawnParticle(particle, point, 1);
                         currentStep += step;
                     } else {
                         animationComplete = true;

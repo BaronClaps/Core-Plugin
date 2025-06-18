@@ -38,7 +38,7 @@ public class Commands {
     @Command("core")@Subcommand("set")
     public void setCore(Player player, @Default("Blaze") String core) {
         if (!coreManager.isValidCore(core.toLowerCase())) {
-            player.sendMessage("Invalid core. Available cores: Blaze, Phantom, Bat, Spider, Stray, Thunder, Wither, Bogged, Golem, Gambler.");
+            player.sendMessage("Invalid core. Available cores: Blaze, Phantom, Bat, Spider, Stray, Thunder, Wither, Bogged, Ender, Gambler.");
             return;
         }
         coreManager.setCore(player, core);
@@ -92,6 +92,6 @@ public class Commands {
         coreManager.clearGUIState(target);
         sender.sendMessage("Reset core of " + target.getName() + ".");
         target.sendMessage("Your core has been reset. Please select a new core.");
-        coreListener.openCoreSelectionGUI(target); // Directly call the method
+        coreListener.openCoreSelectionGUI(target);
     }
 }

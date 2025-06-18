@@ -10,6 +10,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class GUI implements Listener {
 
+	private final Manager coreManager;
+	public GUI(Manager coreManager) {
+		this.coreManager = coreManager;
+	}
+
 	@EventHandler
 	public void onClick(InventoryClickEvent event) {
 		Player player = (Player) event.getWhoClicked();
@@ -17,19 +22,69 @@ public class GUI implements Listener {
 		if (player.hasMetadata("OpenedMenu")) {
 			event.setCancelled(true);
 
-			if (event.getSlot() == 11) {
-				player.getInventory().addItem(new ItemStack(Material.DIAMOND));
-				player.closeInventory();
-
-			} else if (event.getSlot() == 13) {
-				player.getInventory().clear();
-				player.closeInventory();
-
-			} else if (event.getSlot() == 15) {
-				player.getWorld().setStorm(false);
-				player.getWorld().setThundering(false);
-
-				player.closeInventory();
+			switch (event.getSlot()) {
+				case 2:
+					player.sendMessage("You selected the Blaze core.");
+					coreManager.setCore(player, "Blaze");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 4:
+					player.sendMessage("You selected the Phantom core.");
+					coreManager.setCore(player, "Phantom");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 6:
+					player.sendMessage("You selected the Bat core.");
+					coreManager.setCore(player, "Bat");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 10:
+					player.sendMessage("You selected the Spider core.");
+					coreManager.setCore(player, "Spider");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 12:
+					player.sendMessage("You selected the Stray core.");
+					coreManager.setCore(player, "Stray");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 14:
+					player.sendMessage("You selected the Thunder core.");
+					coreManager.setCore(player, "Thunder");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 16:
+					player.sendMessage("You selected the Wither core.");
+					coreManager.setCore(player, "Wither");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 20:
+					player.sendMessage("You selected the Bogged core.");
+					coreManager.setCore(player, "Bogged");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 22:
+					player.sendMessage("You selected the Ender core.");
+					coreManager.setCore(player, "Ender");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				case 24:
+					player.sendMessage("You selected the Gambler core.");
+					coreManager.setCore(player, "Gambler");
+					player.closeInventory();
+					coreManager.updatePlayerWeapon(player);
+					break;
+				default:
+					break;
 			}
 		}
 	}

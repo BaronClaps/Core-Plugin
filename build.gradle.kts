@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "core.smp"
-version = "0.0.15"
+version = "0.0.24"
 
 repositories {
     maven {

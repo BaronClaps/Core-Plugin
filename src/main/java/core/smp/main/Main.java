@@ -14,7 +14,7 @@ public class Main extends JavaPlugin {
         coreManager = new Manager();
         coreAbilities = new Abilities(coreManager);
         coreListener = new Listen(coreManager, coreAbilities);
-        coreGUI = new GUI();
+        coreGUI = new GUI(coreManager);
 
         getServer().getPluginManager().registerEvents(coreListener, this);
         getServer().getPluginManager().registerEvents(coreGUI, this);
