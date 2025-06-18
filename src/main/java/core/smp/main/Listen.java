@@ -84,6 +84,10 @@ public class Listen implements Listener {
             if (coreManager.getCore(p).equalsIgnoreCase("ender")) {
                 coreAbilities.triggerEnderCore(p);
             }
+
+            if (coreManager.getCore(p).equalsIgnoreCase("blaze")) {
+                coreAbilities.triggerBlazeExplode(p);
+            }
         }
     }
 

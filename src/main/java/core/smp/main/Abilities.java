@@ -17,11 +17,13 @@ public class Abilities {
 
     public void triggerBlazeCore(Player attacker, LivingEntity victim) {
         int tier = coreManager.getTier(attacker);
+        victim.setFireTicks(tier == 1 ? 40 : 80);
         long cooldownTime = tier == 2 ? 5000 : 10000;
+    }
 
+    public void triggerBlazeExplode(Player attacker, LivingEntity victim) {
         if (!coreManager.isCooldownActive(attacker, "blaze", cooldownTime)) {
-            victim.setFireTicks(tier == 1 ? 40 : 80);
-            if (tier == 3) {
+            if (coreManager.getTier(attacker) == 3) {
                 attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 10, 4));
                 victim.getWorld().createExplosion(victim.getLocation(), 8.0F, false, false);
                 Particles.spawnTripleParticleRingsForTime(
@@ -171,7 +173,7 @@ public class Abilities {
 
             player.getNearbyEntities(10, 3, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != player) {
-                    entity.teleport(player.getLocation().add(0, 1, 0));
+                    entity.teleport(player.getLocation().add(player.getLocation().getDirection().normalize()));
                 }
             });
         }

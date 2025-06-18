@@ -94,9 +94,9 @@ public class Manager {
         ItemMeta swordMeta = sword.getItemMeta();
         swordMeta.setLore(List.of(ChatColor.GRAY + "A core imbued with the power of the " + getCore(player)));
         swordMeta.setDisplayName(ChatColor.GOLD + getCore(player) + "Core");
+        swordMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         sword.setItemMeta(swordMeta);
-        sword.addEnchantment(Enchantment.VANISHING_CURSE, 1);
-
+        sword.addUnsafeEnchantment(Enchantment.VANISHING_CURSE, 1);
         player.getInventory().addItem(sword);
     }
 
