@@ -3,14 +3,12 @@ package core.smp.main;
 import org.apache.maven.model.interpolation.MavenBuildTimestamp;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class Manager {
     private final Map<UUID, String> playerCores = new HashMap<>();
@@ -94,60 +92,30 @@ public class Manager {
     public void givePlayerWeapon(Player player, Material material) {
         ItemStack sword = new ItemStack(material);
         ItemMeta swordMeta = sword.getItemMeta();
-        swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core"));
+        swordMeta.setLore(List.of(ChatColor.GRAY + "A core imbued with the power of the " + getCore(player)));
+        swordMeta.setDisplayName(ChatColor.GOLD + getCore(player) + "Core");
         sword.setItemMeta(swordMeta);
+        sword.addEnchantment(Enchantment.VANISHING_CURSE, 1);
+
         player.getInventory().addItem(sword);
     }
 
     public void updatePlayerWeapon(Player player) {
-        int tier = getTier(player);
-        Material material;
-
         player.getInventory().forEach(item -> {
-            if (item != null && item.getItemMeta() != null && item.getItemMeta().getLore() != null &&
-                    item.getItemMeta().getLore().contains(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core")) {
+            if (item != null && item.getItemMeta() != null && item.getItemMeta().lore() != null &&
+                    Objects.requireNonNull(item.getItemMeta().lore()).contains("imbued")) {
                 player.getInventory().remove(item);
             }
         });
 
-        switch (tier) {
-            case 1 -> material = Material.WOODEN_SWORD;
-            case 2 -> material = Material.IRON_SWORD;
-            case 3 -> material = Material.DIAMOND_SWORD;
-            default -> {
-                player.sendMessage(ChatColor.RED + "Invalid tier. Defaulting to Wooden Sword.");
-                material = Material.WOODEN_SWORD;
-            }
-        }
-
-        givePlayerWeapon(player, material);
+        givePlayerWeapon(player, Material.STICK);
     }
 
-    public void changePlayerWeapon(Player player, int oldTier) {
-        if (oldTier == 1) {
-            ItemStack sword = new ItemStack(Material.WOODEN_SWORD);
-            ItemMeta swordMeta = sword.getItemMeta();
-            swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core"));
-            sword.setItemMeta(swordMeta);
-            player.getInventory().remove(sword);
-            ItemStack nsword = new ItemStack(Material.IRON_SWORD);
-            ItemMeta nswordMeta = nsword.getItemMeta();
-            nswordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core"));
-            nsword.setItemMeta(nswordMeta);
-            player.getInventory().addItem(nsword);
-        }
-
-        if (oldTier == 2) {
-            ItemStack sword = new ItemStack(Material.IRON_SWORD);
-            ItemMeta swordMeta = sword.getItemMeta();
-            swordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core"));
-            sword.setItemMeta(swordMeta);
-            player.getInventory().remove(sword);
-            ItemStack nsword = new ItemStack(Material.DIAMOND_SWORD);
-            ItemMeta nswordMeta = nsword.getItemMeta();
-            nswordMeta.setLore(List.of(ChatColor.GRAY + "A weapon imbued with the power of the " + getCore(player) + " core"));
-            nsword.setItemMeta(nswordMeta);
-            player.getInventory().addItem(nsword);
-        }
+    public void resetPlayerData(Player player) {
+        playerCores.remove(player.getUniqueId());
+        playerTiers.remove(player.getUniqueId());
+        playerKills.remove(player.getUniqueId());
+        cooldowns.keySet().removeIf(key -> key.startsWith(player.getUniqueId().toString()));
+        playerHits.remove(player.getUniqueId());
     }
 }

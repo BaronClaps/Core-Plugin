@@ -1,18 +1,18 @@
 package core.smp.main;
 
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.ItemStack;
 
 public class GUI implements Listener {
 
 	private final Manager coreManager;
-	public GUI(Manager coreManager) {
+	private final Listen coreListener;
+	public GUI(Manager coreManager, Listen coreListener) {
 		this.coreManager = coreManager;
+		this.coreListener = coreListener;
 	}
 
 	@EventHandler
@@ -82,6 +82,7 @@ public class GUI implements Listener {
 					coreManager.setCore(player, "Gambler");
 					player.closeInventory();
 					coreManager.updatePlayerWeapon(player);
+					coreListener.passive(player);
 					break;
 				default:
 					break;

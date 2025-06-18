@@ -8,7 +8,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class Particles {
     public static void spawnParticleRing(Player player, Particle particle, double radius, int count) {
-        double heightOffset = -0.75;
+        double heightOffset = 0.5;
         double angleIncrement = 2 * Math.PI / count;
         for (int i = 0; i < count; i++) {
             double angle = i * angleIncrement;
@@ -29,28 +29,36 @@ public class Particles {
                     return;
                 }
                 spawnParticleRing(player, particle, radius, count);
-                ticks++;
+                ticks += 20;
             }
-        }.runTaskTimer(Main.getPlugin(Main.class), 0, 1);
+        }.runTaskTimer(Main.getPlugin(Main.class), 0, 20L);
     }
 
-    public static void spawnAngledParticleRings(Player player, Particle particle, double radius, int count, double angleOffset) {
+    public static void spawnTripleParticleRings(Player player, Particle particle, double radius, int count, double angleOffset) {
         double angleIncrement = 2 * Math.PI / count;
-        double angleRadians = Math.toRadians(angleOffset);
 
         for (int i = 0; i < count; i++) {
             double angle = i * angleIncrement;
             double x = radius * Math.cos(angle);
             double z = radius * Math.sin(angle);
 
-            double y = x * Math.sin(angleRadians);
-            x = x * Math.cos(angleRadians);
+            // Centered around the player's body
+            double yTop = 1.25; // Top of the player's body
+            double yMiddle = 0.75; // Middle of the player's body
+            double yBottom = 0.25; // Bottom of the player's body
 
-            player.getWorld().spawnParticle(particle, player.getLocation().add(x, y, z), 1);
+            // Spawn particles at different heights
+            player.getWorld().spawnParticle(particle, player.getLocation().add(x, yTop, z), 1);
+            player.getWorld().spawnParticle(particle, player.getLocation().add(x, yMiddle, z), 1);
+            player.getWorld().spawnParticle(particle, player.getLocation().add(x, yBottom, z), 1);
+
+            // Spawn particles on each side of the player
+            player.getWorld().spawnParticle(particle, player.getLocation().add(radius, yMiddle, 0), 1);
+            player.getWorld().spawnParticle(particle, player.getLocation().add(-radius, yMiddle, 0), 1);
         }
     }
 
-    public static void spawnAngledParticleRingsForTime(Player player, Particle particle, double radius, int count, double angleOffset, int time) {
+    public static void spawnTripleParticleRingsForTime(Player player, Particle particle, double radius, int count, double angleOffset, double time) {
         new BukkitRunnable() {
             int ticks = 0;
 
@@ -60,10 +68,10 @@ public class Particles {
                     cancel();
                     return;
                 }
-                spawnAngledParticleRings(player, particle, radius, count, angleOffset);
-                ticks++;
+                spawnTripleParticleRings(player, particle, radius, count, angleOffset);
+                ticks += 20;
             }
-        }.runTaskTimer(Main.getPlugin(Main.class), 0, 1);
+        }.runTaskTimer(Main.getPlugin(Main.class), 0, 20L);
     }
 
     public static void spawnParticleLine(Location start, Location end, Particle particle, double step) {
@@ -92,53 +100,8 @@ public class Particles {
                     return;
                 }
                 spawnParticleLine(start, end, particle, step);
-                ticks++;
+                ticks ++;
             }
         }.runTaskTimer(Main.getPlugin(Main.class), 0, 1);
     }
-
-    public static void spawnAnimatedParticleLineForTime(Location start, Location end, Particle particle, double step, int time, int delay) {
-        if (start == null || end == null) {
-            throw new IllegalArgumentException("Start or end location cannot be null.");
-        }
-
-        World world = start.getWorld();
-        if (world == null || !world.equals(end.getWorld())) {
-            throw new IllegalArgumentException("Start and end locations must be in the same world.");
-        }
-
-        if (particle == null) {
-            throw new IllegalArgumentException("Particle type cannot be null.");
-        }
-
-        new BukkitRunnable() {
-            int ticks = 0;
-            double currentStep = 0;
-            boolean animationComplete = false;
-
-            @Override
-            public void run() {
-                if (ticks >= time * 20) {
-                    cancel();
-                    return;
-                }
-
-                if (!animationComplete) {
-                    if (currentStep <= start.distance(end)) {
-                        Location point = start.clone().add(end.toVector().subtract(start.toVector()).normalize().multiply(currentStep));
-                        world.spawnParticle(particle, point, 1);
-                        currentStep += step;
-                    } else {
-                        animationComplete = true;
-                    }
-                } else {
-                    spawnParticleLine(start, end, particle, step);
-                }
-
-                ticks += delay;
-            }
-        }.runTaskTimer(Main.getPlugin(Main.class), 0, delay);
-    }
-
-
 }

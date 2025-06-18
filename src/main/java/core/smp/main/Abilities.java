@@ -22,8 +22,16 @@ public class Abilities {
         if (!coreManager.isCooldownActive(attacker, "blaze", cooldownTime)) {
             victim.setFireTicks(tier == 1 ? 40 : 80);
             if (tier == 3) {
-                attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 40, 4));
-                victim.getWorld().createExplosion(victim.getLocation(), 1.0F, false, false);
+                attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 10, 4));
+                victim.getWorld().createExplosion(victim.getLocation(), 8.0F, false, false);
+                Particles.spawnTripleParticleRingsForTime(
+                        (Player) victim,
+                        Particle.SOUL_FIRE_FLAME,
+                        1.0F,
+                        50,
+                        45.0,
+                        0.5
+                );
             }
         }
     }
@@ -35,7 +43,7 @@ public class Abilities {
             return;
         }
 
-        player.setVelocity(player.getLocation().getBlock().getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(-1.5));
+        player.setVelocity(player.getLocation().getDirection().setY(Math.sin(Math.toRadians(-player.getLocation().getPitch()))).multiply(2.5));
 
         if (tier >= 2) {
             player.getNearbyEntities(3, 3, 3).forEach(entity -> {
@@ -77,17 +85,13 @@ public class Abilities {
         long cooldownTime = 30000;
 
         if (tier >= 2 && !coreManager.isCooldownActive(attacker, "thunder", cooldownTime)) {
-            Particles.spawnAngledParticleRingsForTime(attacker, Particle.CLOUD, 3, 100, 45, 5);
-
-            attacker.sendMessage("Player Location: " + attacker.getLocation());
-            attacker.sendMessage("Particle Type: " + Particle.CLOUD);
+            Particles.spawnParticleRingForTime(attacker, Particle.CLOUD, 3, 50, 5);
             victim.getWorld().strikeLightning(victim.getLocation());
 
             if (tier == 3) {
                 victim.getNearbyEntities(10, 3, 10).forEach(entity -> {
                     if (entity instanceof Player && entity != victim && entity != attacker) {
-
-                        Particles.spawnAnimatedParticleLineForTime(victim.getLocation(), entity.getLocation(), org.bukkit.Particle.ELECTRIC_SPARK, 0.2, 5, 20);
+                        Particles.spawnParticleLineForTime(victim.getLocation().add(0,1,0), entity.getLocation().add(0,1,0), org.bukkit.Particle.ELECTRIC_SPARK, 0.2, 1);
                         entity.getLocation().getWorld().strikeLightning(entity.getLocation());
                     }
                 });
@@ -167,7 +171,7 @@ public class Abilities {
 
             player.getNearbyEntities(10, 3, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != player) {
-                    entity.setVelocity(entity.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(1.5));
+                    entity.teleport(player.getLocation().add(0, 1, 0));
                 }
             });
         }
@@ -183,6 +187,8 @@ public class Abilities {
         }
 
         Location targetLocation = player.getTargetBlockExact(50).getLocation().add(0, 1, 0);
+        targetLocation.setDirection(player.getLocation().getDirection());
+        targetLocation.setPitch(player.getLocation().getPitch());
         player.teleport(targetLocation);
         player.getWorld().spawnParticle(Particle.PORTAL, targetLocation, 50, 0.5, 0.5, 0.5, 0.1);
         player.playSound(targetLocation, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);

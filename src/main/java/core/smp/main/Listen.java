@@ -9,18 +9,19 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
-import java.util.List;
 import java.util.Objects;
 
 public class Listen implements Listener {
@@ -42,7 +43,12 @@ public class Listen implements Listener {
             event.setCancelled(true);
         }
 
-        if (event.getDamager() instanceof Player && event.getEntity() instanceof LivingEntity) {
+        ItemStack ev = null;
+        if (event.getDamager() instanceof Player p) {
+            ev = p.getInventory().getItemInMainHand();
+        }
+
+        if (event.getDamager() instanceof Player && (event.getEntity() instanceof Player || (ev != null && ev.getItemMeta() != null && ev.getItemMeta().getDisplayName() != null && (ev.getType() == Material.STICK)))) {
             Player attacker = (Player) event.getDamager();
             LivingEntity victim = (LivingEntity) event.getEntity();
             String core = coreManager.getCore(attacker);
@@ -66,7 +72,7 @@ public class Listen implements Listener {
     @EventHandler
     public void onItemClick(PlayerInteractEvent ev){
         Player p = ev.getPlayer();
-        if (ev.getAction() == Action.RIGHT_CLICK_AIR && ev.getItem() != null && ev.getItem().getItemMeta() != null && ev.getItem().getItemMeta().getDisplayName() != null && (ev.getItem().getType() == Material.DIAMOND_SWORD || ev.getItem().getType() == Material.IRON_SWORD || ev.getItem().getType() == Material.WOODEN_SWORD)) {
+        if (ev.getAction() == Action.RIGHT_CLICK_AIR && ev.getItem() != null && ev.getItem().getItemMeta() != null && ev.getItem().getItemMeta().getDisplayName() != null && (ev.getItem().getType() == Material.STICK)) {
             if (coreManager.getCore(p).equalsIgnoreCase("phantom")) {
                 coreAbilities.triggerPhantomDash(p);
             }
@@ -82,21 +88,37 @@ public class Listen implements Listener {
     }
 
     @EventHandler
-    public void onPlayerHold(PlayerItemHeldEvent ev){
-        ItemStack ite = ev.getPlayer().getActiveItem();
+    public void onPlayerHold(PlayerItemHeldEvent ev) {
+        Player player = ev.getPlayer();
+        Bukkit.getScheduler().runTaskTimer(Main.getPlugin(Main.class), () -> {
+            ItemStack ite = player.getInventory().getItemInMainHand();
+            if (ite != null && ite.getItemMeta() != null && ite.getItemMeta().getDisplayName() != null &&
+                    (ite.getType() == Material.STICK)) {
+                Particles.spawnParticleRing(
+                        player,
+                        Particle.DRIPPING_DRIPSTONE_LAVA,
+                        1.0F,
+                        25
+                );
+            }
+        }, 0L, 160L);
 
-        if (ite != null && ite.getItemMeta() != null && ite.getItemMeta().getDisplayName() != null && (ite.getType() == Material.DIAMOND_SWORD || ite.getType() == Material.IRON_SWORD || ite.getType() == Material.WOODEN_SWORD)) {
-            Particles.spawnParticleRing(
-                    ev.getPlayer(),
-                    Particle.DRIPPING_DRIPSTONE_LAVA,
-                    1.0F,
-                    100
-            );
-        }
+        Bukkit.getScheduler().runTaskTimer(Main.getPlugin(Main.class), () -> {
+            ItemStack ite = player.getInventory().getItemInMainHand();
+            if (ite != null && ite.getType() == Material.NETHERITE_INGOT) {
+                Particles.spawnTripleParticleRings(
+                        player,
+                        Particle.SOUL_FIRE_FLAME,
+                        1.0F,
+                        50,
+                        45.0
+                );
+            }
+        }, 0L, 40L);
     }
 
     @EventHandler
-    public void onPlayerDeath(org.bukkit.event.entity.PlayerDeathEvent event) {
+    public void onPlayerDeath(PlayerDeathEvent event) {
         Player attacker = event.getEntity().getKiller();
         int preKills = coreManager.getKills(event.getPlayer());
 
@@ -132,8 +154,8 @@ public class Listen implements Listener {
             if (Objects.equals(coreManager.getCore(attacker), "STRAY")) {
                 event.getPlayer().getNearbyEntities(3, 3, 3).forEach(entity -> {
                     if (entity instanceof LivingEntity && entity != attacker) {
-                        ((LivingEntity) entity).addPotionEffect(new org.bukkit.potion.PotionEffect(org.bukkit.potion.PotionEffectType.SLOWNESS, 60, 3));
-                        event.getPlayer().spawnParticle(org.bukkit.Particle.DRAGON_BREATH, Objects.requireNonNull(event.getEntity().getLastDeathLocation()), 20, 0.5, 0.5, 0.5, 0.1);
+                        ((LivingEntity) entity).addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 3));
+                        event.getPlayer().spawnParticle(Particle.DRAGON_BREATH, Objects.requireNonNull(event.getEntity().getLastDeathLocation()), 20, 0.5, 0.5, 0.5, 0.1);
                     }
                 });
             }
@@ -145,11 +167,7 @@ public class Listen implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if (coreManager.getCore(player) == null) {
-            openCoreSelectionGUI(player);
-        } else {
-            passive(player);
-        }
+        passive(player);
     }
 
     void openCoreSelectionGUI(Player player) {
@@ -248,8 +266,9 @@ public class Listen implements Listener {
     }
 
     @EventHandler
-    public void onPlayerRespawn(org.bukkit.event.player.PlayerRespawnEvent event) {
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         passive(player);
+        coreManager.updatePlayerWeapon(player);
     }
 }
