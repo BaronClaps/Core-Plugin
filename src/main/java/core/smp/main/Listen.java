@@ -26,7 +26,7 @@ import java.util.Objects;
 
 public class Listen implements Listener {
     private final Manager coreManager;
-    private final Abilities coreAbilities;
+    public final Abilities coreAbilities;
 
     public Listen(Manager coreManager, Abilities coreAbilities) {
         this.coreManager = coreManager;

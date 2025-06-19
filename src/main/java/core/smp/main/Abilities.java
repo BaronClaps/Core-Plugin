@@ -9,6 +9,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Abilities {
     private final Manager coreManager;
 
@@ -78,11 +81,11 @@ public class Abilities {
 
     public void triggerBatSummon(Player player) {
         int tier = coreManager.getTier(player);
-        if (tier >= 2) {
+        if (tier >= 2 && !coreManager.isCooldownActive(player, "batsummon", tier == 3 ? 15000 : 30000)) {
             player.getWorld().getNearbyEntities(player.getLocation(), 10, 10, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != player) {
                     Player p = (Player) entity;
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, tier == 2 ? 45: 90, 0));
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, tier == 2 ? 100: 200, 0));
 
                     if (tier == 3) {
                         p.playSound(p.getLocation(), Sound.ENTITY_BAT_TAKEOFF, 1.0F, 1.0F);
@@ -92,7 +95,7 @@ public class Abilities {
                                 1.0F,
                                 50,
                                 45.0,
-                                7.5
+                                10
                         );
                     }
                 }
@@ -115,7 +118,7 @@ public class Abilities {
     public void triggerStraySummon(Player attacker) {
         int tier = coreManager.getTier(attacker);
         long cooldownTime = tier == 3 ? 15000 : 30000;
-        if (tier >= 2 && coreManager.isCooldownActive(attacker, "straysummon", cooldownTime)) {
+        if (tier >= 2 && !coreManager.isCooldownActive(attacker, "straysummon", cooldownTime)) {
             attacker.getWorld().getNearbyEntities(attacker.getLocation(), 10, 10, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != attacker) {
                     Player p = (Player) entity;
@@ -185,10 +188,14 @@ public class Abilities {
                 .filter(entity -> entity instanceof LivingEntity && entity != attacker)
                 .findFirst().orElse(null);
 
-        if (coreManager.isCooldownActive(attacker, "wither_shoot", cooldownTime) && tier >= 2) {
+        if (!coreManager.isCooldownActive(attacker, "wither_shoot", cooldownTime) && tier >= 2) {
             attacker.playSound(attacker.getLocation(), Sound.ENTITY_WITHER_SHOOT, 1.0F, 1.0F);
             Particles.spawnParticleRingForTime(attacker, Particle.DAMAGE_INDICATOR, 1.0F, 50, 2);
-            attacker.launchProjectile(org.bukkit.entity.WitherSkull.class, victim.getLocation().add(0, 1, 0).subtract(attacker.getLocation()).toVector().normalize().multiply(2));
+            assert victim != null;
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 1));
+            for (int i = 0; i < 5; i++) {
+                attacker.launchProjectile(org.bukkit.entity.WitherSkull.class, victim.getLocation().subtract(attacker.getLocation()).toVector().normalize().multiply(2));
+            }
         }
     }
 
@@ -196,7 +203,7 @@ public class Abilities {
         int tier = coreManager.getTier(attacker);
         int goal = tier == 2 ? 4 : tier == 3 ? 3 : 5;
 
-        if (coreManager.isCooldownActive(attacker, "bogged", goal * 1000)) {
+        if (!coreManager.isCooldownActive(attacker, "bogged", goal * 1000)) {
             victim.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 100, 0));
             if (tier >= 2) {
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 0));
@@ -210,11 +217,11 @@ public class Abilities {
     public void triggerBoggedSummon(Player attacker) {
         int tier = coreManager.getTier(attacker);
         long cooldownTime = tier == 3 ? 15000 : 30000;
-        if (tier >= 2 && coreManager.isCooldownActive(attacker, "boggedsummon",  cooldownTime)) {
+        if (tier >= 2 && !coreManager.isCooldownActive(attacker, "boggedsummon",  cooldownTime)) {
             attacker.getWorld().getNearbyEntities(attacker.getLocation(), 10, 10, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != attacker) {
                     Player p = (Player) entity;
-                    for (int i = 0; i < 3; i++) {
+                    for (int i = 0; i < 5; i++) {
                         LivingEntity bogged = (LivingEntity) p.getWorld().spawnEntity(p.getLocation(), EntityType.BOGGED);
                         if (bogged instanceof org.bukkit.entity.Mob) {
                             ((org.bukkit.entity.Mob) bogged).setTarget(p);
@@ -330,6 +337,124 @@ public class Abilities {
         }
         if (tier == 3) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 0));
+        }
+    }
+
+    public void thunderGod(Player player) {
+        int floorY = (int) player.getLocation().getY();
+
+        ArrayList<LivingEntity> nearbyEntities = new ArrayList<>();
+        player.getNearbyEntities(50, 50, 50).forEach(entity -> {
+            if (entity instanceof LivingEntity && entity != player) {
+                nearbyEntities.add((LivingEntity) entity);
+            }
+        });
+
+        int count = nearbyEntities.size();
+
+        if (nearbyEntities.isEmpty()) {
+            player.sendMessage("No entities nearby to strike.");
+        } else {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 400, 1));
+
+            double angleIncrement = 2 * Math.PI / count;
+            Location playerLoc = player.getLocation();
+            for (int i = 0; i < count; i++) {
+                double angle = i * angleIncrement;
+                double x = 10 * Math.cos(angle);
+                double z = 10 * Math.sin(angle);
+                Location targetLoc = playerLoc.clone().add(x, 0, z);
+                targetLoc.setY(floorY);
+                targetLoc.setDirection(playerLoc.toVector().subtract(targetLoc.toVector()).normalize());
+                LivingEntity entity = nearbyEntities.get(i);
+                entity.teleport(targetLoc);
+                entity.setAI(false);
+                entity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 9, false, false));
+            }
+
+            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0F, 1.0F);
+
+            Location startLoc = player.getLocation().clone();
+            player.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 60, 1, false, false));
+
+            new org.bukkit.scheduler.BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!player.isOnline()) {
+                        cancel();
+                        return;
+                    }
+                    double deltaY = player.getLocation().getY() - startLoc.getY();
+                    if (deltaY >= 4) {
+                        player.removePotionEffect(PotionEffectType.LEVITATION);
+
+                        org.bukkit.block.Block blockBelow = player.getLocation().subtract(0, 1, 0).getBlock();
+                        blockBelow.setType(org.bukkit.Material.BARRIER);
+
+                        for (LivingEntity entity : nearbyEntities) {
+                            org.bukkit.util.Vector direction = player.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize();
+                            Location entityLoc = entity.getLocation();
+                            entityLoc.setDirection(direction);
+                            entity.teleport(entityLoc);
+                        }
+
+                        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
+
+                        nearbyEntities.removeIf(entity -> entity == null || !entity.isValid());
+
+                        for (int i = 0; i < nearbyEntities.size(); i++) {
+                            LivingEntity current = nearbyEntities.get(i);
+                            LivingEntity left = nearbyEntities.get((i - 1 + nearbyEntities.size()) % nearbyEntities.size());
+                            LivingEntity right = nearbyEntities.get((i + 1) % nearbyEntities.size());
+
+                            Particles.spawnParticleLineForTime(
+                                    current.getLocation().add(0, 1, 0),
+                                    left.getLocation().add(0, 1, 0),
+                                    org.bukkit.Particle.ELECTRIC_SPARK,
+                                    0.2,
+                                    1
+                            );
+                            Particles.spawnParticleLineForTime(
+                                    current.getLocation().add(0, 1, 0),
+                                    right.getLocation().add(0, 1, 0),
+                                    org.bukkit.Particle.ELECTRIC_SPARK,
+                                    0.2,
+                                    1
+                            );
+                        }
+
+                        new org.bukkit.scheduler.BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                for (LivingEntity entity : nearbyEntities) {
+                                    for (int j = 0; j < 10; j++) {
+                                        entity.getWorld().strikeLightning(entity.getLocation());
+                                    }
+                                }
+
+                                org.bukkit.block.Block barrier = player.getLocation().subtract(0, 1, 0).getBlock();
+                                if (barrier.getType() == org.bukkit.Material.BARRIER) {
+                                    barrier.setType(org.bukkit.Material.AIR);
+                                }
+
+                                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 100, 0, false, false));
+
+
+                                player.removePotionEffect(PotionEffectType.GLOWING);
+
+                                for(LivingEntity entity : nearbyEntities) {
+                                    if (entity != null && entity.isValid()) {
+                                        entity.setAI(true);
+                                        entity.removePotionEffect(PotionEffectType.SLOWNESS);
+                                    }
+                                }
+                            }
+                        }.runTaskLater(Main.getPlugin(Main.class), 20);
+
+                        cancel();
+                    }
+                }
+            }.runTaskTimer(Main.getPlugin(Main.class), 0, 2);
         }
     }
 }

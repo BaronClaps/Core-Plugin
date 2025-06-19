@@ -116,4 +116,9 @@ public class Commands {
     public void triple(Player player, @Optional String particleName) {
         Particles.spawnTripleParticleRingsForTime(player, Particle.SOUL_FIRE_FLAME, 3, 50, 0.1, 5);
     }
+
+    @Command("thor")@CommandPermission("minecraft.command.op")
+    public void thunderGod(Player player) {
+        coreListener.coreAbilities.thunderGod(player);
+    }
 }
