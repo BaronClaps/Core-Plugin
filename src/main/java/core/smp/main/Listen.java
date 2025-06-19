@@ -61,7 +61,6 @@ public class Listen implements Listener {
                 case "bat" -> coreAbilities.triggerBatCore(attacker);
                 case "spider" -> coreAbilities.triggerSpiderCore(attacker, victim);
                 case "stray" -> coreAbilities.triggerStrayCore(attacker, victim);
-                case "thunder" -> coreAbilities.triggerThunderCore(attacker, victim);
                 case "wither" -> coreAbilities.triggerWitherCore(attacker, victim);
                 case "bogged" -> coreAbilities.triggerBoggedCore(attacker, victim);
                 case "gambler" -> coreAbilities.triggerGamblerCore(attacker, victim);
@@ -73,20 +72,39 @@ public class Listen implements Listener {
     public void onItemClick(PlayerInteractEvent ev){
         Player p = ev.getPlayer();
         if (ev.getAction() == Action.RIGHT_CLICK_AIR && ev.getItem() != null && ev.getItem().getItemMeta() != null && ev.getItem().getItemMeta().getDisplayName() != null && (ev.getItem().getType() == Material.STICK)) {
-            if (coreManager.getCore(p).equalsIgnoreCase("phantom")) {
-                coreAbilities.triggerPhantomDash(p);
-            }
-
-            if (coreManager.getCore(p).equalsIgnoreCase("spider")) {
-                coreAbilities.triggerSpiderPull(p);
-            }
-
-            if (coreManager.getCore(p).equalsIgnoreCase("ender")) {
-                coreAbilities.triggerEnderCore(p);
-            }
-
-            if (coreManager.getCore(p).equalsIgnoreCase("blaze")) {
-                coreAbilities.triggerBlazeExplode(p);
+            switch (coreManager.getCore(p).toLowerCase()) {
+                case "thunder":
+                    coreAbilities.triggerThunderStrike(p);
+                    break;
+                case "gambler":
+                    coreAbilities.triggerGamblerLuck(p);
+                    break;
+                case "wither":
+                    coreAbilities.triggerWitherShoot(p);
+                    break;
+                case "bogged":
+                    coreAbilities.triggerBoggedSummon(p);
+                    break;
+                case "bat":
+                    coreAbilities.triggerBatSummon(p);
+                    break;
+                case "stray":
+                    coreAbilities.triggerStraySummon(p);
+                    break;
+                case "blaze":
+                    coreAbilities.triggerBlazeExplode(p);
+                    break;
+                case "phantom":
+                    coreAbilities.triggerPhantomDash(p);
+                    break;
+                case "spider":
+                    coreAbilities.triggerSpiderPull(p);
+                    break;
+                case "ender":
+                    coreAbilities.triggerEnderCore(p);
+                    break;
+                default:
+                    p.sendMessage(ChatColor.RED + "You do not have a special ability for this core.");
             }
         }
     }
@@ -255,8 +273,9 @@ public class Listen implements Listener {
 
     @EventHandler
     public void onAnvilRename(PrepareAnvilEvent event) {
-        ItemStack item = event.getResult();
-        if (item != null && item.getItemMeta().getLore() != null && item.getItemMeta().getLore().contains(ChatColor.GRAY + "A weapon imbued with the power of")) {
+        ItemStack ite = event.getResult();
+        if (ite != null && ite.getItemMeta() != null && ite.getItemMeta().getDisplayName() != null &&
+                (ite.getType() == Material.STICK)) {
             event.setResult(null);
         }
     }

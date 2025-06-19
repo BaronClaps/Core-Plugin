@@ -3,6 +3,7 @@ package core.smp.main;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -18,23 +19,28 @@ public class Abilities {
     public void triggerBlazeCore(Player attacker, LivingEntity victim) {
         int tier = coreManager.getTier(attacker);
         victim.setFireTicks(tier == 1 ? 40 : 80);
-        long cooldownTime = tier == 2 ? 5000 : 10000;
     }
 
-    public void triggerBlazeExplode(Player attacker, LivingEntity victim) {
-        if (!coreManager.isCooldownActive(attacker, "blaze", cooldownTime)) {
-            if (coreManager.getTier(attacker) == 3) {
-                attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 10, 4));
-                victim.getWorld().createExplosion(victim.getLocation(), 8.0F, false, false);
-                Particles.spawnTripleParticleRingsForTime(
-                        (Player) victim,
-                        Particle.SOUL_FIRE_FLAME,
-                        1.0F,
-                        50,
-                        45.0,
-                        0.5
-                );
-            }
+    public void triggerBlazeExplode(Player attacker) {
+        int tier = coreManager.getTier(attacker);
+        LivingEntity victim = (LivingEntity) attacker.getEyeLocation().getNearbyEntities(10,10,10).stream()
+                .filter(entity -> entity instanceof LivingEntity && entity != attacker)
+                .findFirst().orElse(null);
+        if (victim == null) {
+            return;
+        }
+        long cooldownTime = 10000;
+        if (!coreManager.isCooldownActive(attacker, "blaze", cooldownTime) && tier >= 3) {
+            attacker.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 10, 4));
+            victim.getWorld().createExplosion(victim.getLocation(), 5.0F, false, false);
+            Particles.spawnTripleParticleRingsForTime(
+                    (Player) victim,
+                    Particle.SOUL_FIRE_FLAME,
+                    1.0F,
+                    50,
+                    45.0,
+                    0.5
+            );
         }
     }
 
@@ -70,6 +76,30 @@ public class Abilities {
         }
     }
 
+    public void triggerBatSummon(Player player) {
+        int tier = coreManager.getTier(player);
+        if (tier >= 2) {
+            player.getWorld().getNearbyEntities(player.getLocation(), 10, 10, 10).forEach(entity -> {
+                if (entity instanceof Player && entity != player) {
+                    Player p = (Player) entity;
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, tier == 2 ? 45: 90, 0));
+
+                    if (tier == 3) {
+                        p.playSound(p.getLocation(), Sound.ENTITY_BAT_TAKEOFF, 1.0F, 1.0F);
+                        Particles.spawnTripleParticleRingsForTime(
+                                p,
+                                Particle.SQUID_INK,
+                                1.0F,
+                                50,
+                                45.0,
+                                7.5
+                        );
+                    }
+                }
+            });
+        }
+    }
+
     public void triggerStrayCore(Player attacker, LivingEntity victim) {
         int tier = coreManager.getTier(attacker);
         long cooldownTime = 5000;
@@ -82,17 +112,54 @@ public class Abilities {
         }
     }
 
-    public void triggerThunderCore(Player attacker, LivingEntity victim) {
+    public void triggerStraySummon(Player attacker) {
+        int tier = coreManager.getTier(attacker);
+        long cooldownTime = tier == 3 ? 15000 : 30000;
+        if (tier >= 2 && coreManager.isCooldownActive(attacker, "straysummon", cooldownTime)) {
+            attacker.getWorld().getNearbyEntities(attacker.getLocation(), 10, 10, 10).forEach(entity -> {
+                if (entity instanceof Player && entity != attacker) {
+                    Player p = (Player) entity;
+                    for (int i = 0; i < 5; i++) {
+                        LivingEntity stray = (LivingEntity) p.getWorld().spawnEntity(p.getLocation(), EntityType.STRAY);
+                        if (stray instanceof org.bukkit.entity.Mob) {
+                            ((org.bukkit.entity.Mob) stray).setTarget(p);
+                        }
+                    }
+                    Particles.spawnParticleRingForTime(
+                            p,
+                            Particle.SNOWFLAKE,
+                            1.0F,
+                            50,
+                            2
+                    );
+                    p.playSound(p.getLocation(), Sound.ENTITY_STRAY_AMBIENT, 1.0F, 1.0F);
+                    if (tier == 3) {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 2));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 200, 0));
+                    }
+                }
+            });
+        }
+    }
+
+    public void triggerThunderStrike(Player attacker) {
         int tier = coreManager.getTier(attacker);
         long cooldownTime = 30000;
 
         if (tier >= 2 && !coreManager.isCooldownActive(attacker, "thunder", cooldownTime)) {
-            Particles.spawnParticleRingForTime(attacker, Particle.CLOUD, 3, 50, 5);
-            victim.getWorld().strikeLightning(victim.getLocation());
+            Particles.spawnParticleRingForTime(attacker, Particle.ANGRY_VILLAGER, 3, 50, 2);
+            LivingEntity victim = (LivingEntity) attacker.getNearbyEntities(25,25,25).stream()
+                    .filter(entity -> entity instanceof LivingEntity && entity != attacker)
+                    .findFirst().orElse(null);
+
+            if (victim != null)
+                victim.getWorld().strikeLightning(victim.getLocation());
+            else
+                attacker.getWorld().strikeLightning(attacker.getLocation());
 
             if (tier == 3) {
-                victim.getNearbyEntities(10, 3, 10).forEach(entity -> {
-                    if (entity instanceof Player && entity != victim && entity != attacker) {
+                attacker.getNearbyEntities(10, 10, 10).forEach(entity -> {
+                    if (entity instanceof LivingEntity && entity != victim && entity != attacker) {
                         Particles.spawnParticleLineForTime(victim.getLocation().add(0,1,0), entity.getLocation().add(0,1,0), org.bukkit.Particle.ELECTRIC_SPARK, 0.2, 1);
                         entity.getLocation().getWorld().strikeLightning(entity.getLocation());
                     }
@@ -107,6 +174,21 @@ public class Abilities {
         if (tier == 3) {
             victim.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 0));
             victim.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, 100, 0));
+        }
+    }
+
+    public void triggerWitherShoot(Player attacker) {
+        int tier = coreManager.getTier(attacker);
+        long cooldownTime = tier == 3 ? 10000 : 15000;
+
+        LivingEntity victim = (LivingEntity) attacker.getEyeLocation().getNearbyEntities(10,10,10).stream()
+                .filter(entity -> entity instanceof LivingEntity && entity != attacker)
+                .findFirst().orElse(null);
+
+        if (coreManager.isCooldownActive(attacker, "wither_shoot", cooldownTime) && tier >= 2) {
+            attacker.playSound(attacker.getLocation(), Sound.ENTITY_WITHER_SHOOT, 1.0F, 1.0F);
+            Particles.spawnParticleRingForTime(attacker, Particle.DAMAGE_INDICATOR, 1.0F, 50, 2);
+            attacker.launchProjectile(org.bukkit.entity.WitherSkull.class, victim.getLocation().add(0, 1, 0).subtract(attacker.getLocation()).toVector().normalize().multiply(2));
         }
     }
 
@@ -125,6 +207,36 @@ public class Abilities {
         }
     }
 
+    public void triggerBoggedSummon(Player attacker) {
+        int tier = coreManager.getTier(attacker);
+        long cooldownTime = tier == 3 ? 15000 : 30000;
+        if (tier >= 2 && coreManager.isCooldownActive(attacker, "boggedsummon",  cooldownTime)) {
+            attacker.getWorld().getNearbyEntities(attacker.getLocation(), 10, 10, 10).forEach(entity -> {
+                if (entity instanceof Player && entity != attacker) {
+                    Player p = (Player) entity;
+                    for (int i = 0; i < 3; i++) {
+                        LivingEntity bogged = (LivingEntity) p.getWorld().spawnEntity(p.getLocation(), EntityType.BOGGED);
+                        if (bogged instanceof org.bukkit.entity.Mob) {
+                            ((org.bukkit.entity.Mob) bogged).setTarget(p);
+                        }
+                    }
+                    Particles.spawnParticleRingForTime(
+                            p,
+                            Particle.NOTE,
+                            1.0F,
+                            50,
+                            2
+                    );
+                    p.playSound(p.getLocation(), Sound.ENTITY_WARDEN_EMERGE, 1.0F, 1.0F);
+                    if (tier == 3) {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 2));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 200, 0));
+                    }
+                }
+            });
+        }
+    }
+
     public void triggerGamblerCore(Player attacker, LivingEntity victim) {
         int tier = coreManager.getTier(attacker);
         int chance = tier == 2 ? 35 : tier == 3 ? 50 : 10;
@@ -132,6 +244,24 @@ public class Abilities {
         if (Math.random() * 100 < chance) {
             applyRandomEffect(victim, tier);
         }
+    }
+
+    public void triggerGamblerLuck(Player player) {
+        int tier = coreManager.getTier(player);
+        int radius = tier == 3 ? 10 : 7;
+        if (coreManager.isCooldownActive(player, "luck", 15000) || tier <= 1) {
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0F, 1.0F);
+            return;
+        }
+        player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius).forEach(entity -> {
+            if (entity instanceof Player && entity != player) {
+                Player p = (Player) entity;
+                p.getActivePotionEffects().forEach(effect -> p.removePotionEffect(effect.getType()));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 100, 0));
+                p.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, 100, 0));
+            }
+        });
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.2F);
     }
 
     private void applyRandomEffect(LivingEntity victim, int tier) {
@@ -171,7 +301,7 @@ public class Abilities {
                 return;
             }
 
-            player.getNearbyEntities(10, 3, 10).forEach(entity -> {
+            player.getNearbyEntities(10, 10, 10).forEach(entity -> {
                 if (entity instanceof Player && entity != player) {
                     entity.teleport(player.getLocation().add(player.getLocation().getDirection().normalize()));
                 }
