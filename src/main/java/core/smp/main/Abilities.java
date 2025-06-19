@@ -81,12 +81,13 @@ public class Abilities {
         }
     }
 
-    public void triggerBatSummon(Player player) {
+    public void triggerBatBlind(Player player) {
         int tier = coreManager.getTier(player);
-        if (tier >= 2 && !coreManager.isCooldownActive(player, "batsummon", tier == 3 ? 15000 : 30000)) {
+        if (tier >= 2 && !coreManager.isCooldownActive(player, "batblind", tier == 3 ? 15000 : 30000)) {
             player.getWorld().getNearbyEntities(player.getLocation(), 10, 10, 10).forEach(entity -> {
                 if (entity instanceof Player p && entity != player) {
                     p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, tier == 2 ? 100: 200, 0));
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, tier == 2 ? 160: 260, 0));
                     p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, tier == 2 ? 60: 160, 0));
 
                     if (tier == 3) {
@@ -350,6 +351,8 @@ public class Abilities {
         if (tier == 3) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 200, 0));
         }
+
+        player.setCooldown(Material.STICK, tier == 3 ? (30 * 20) : (60 * 20));
     }
 
     public void thunderGod(Player player) {

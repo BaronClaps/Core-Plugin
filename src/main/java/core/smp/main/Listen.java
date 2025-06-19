@@ -86,7 +86,7 @@ public class Listen implements Listener {
                     coreAbilities.triggerBoggedSummon(p);
                     break;
                 case "bat":
-                    coreAbilities.triggerBatSummon(p);
+                    coreAbilities.triggerBatBlind(p);
                     break;
                 case "stray":
                     coreAbilities.triggerStraySummon(p);
